@@ -1,0 +1,1123 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="theme-color" content="#F5F5F7">
+<title>민턴온리</title>
+<style>
+  :root {
+    --p:#1A6FD4; --pl:#E3EFFC; --g:#30D158; --a:#FF9F0A; --red:#FF3B30;
+    --bg:#F5F5F7; --card:#FFFFFF; --dark:#1C1C1E;
+    --txt:#1D1D1F; --txt2:#6E6E73; --border:#E5E5EA;
+    --safe-b: env(safe-area-inset-bottom,0px);
+  }
+  *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+  body{font-family:-apple-system,'SF Pro Display','Helvetica Neue',sans-serif;background:var(--bg);color:var(--txt);max-width:480px;margin:0 auto;min-height:100vh;padding-bottom:calc(72px + var(--safe-b))}
+
+  /* ── 격언 ── */
+  .quote-card{background:var(--dark);margin:14px 14px 0;border-radius:18px;padding:16px 18px;cursor:pointer;user-select:none}
+  .quote-text{font-size:14px;font-weight:500;color:#F5F5F7;line-height:1.55;letter-spacing:-.1px}
+  .quote-author{font-size:11px;font-weight:600;color:rgba(255,255,255,.4);letter-spacing:.06em;text-transform:uppercase;margin-top:8px}
+
+  /* ── 페이지 ── */
+  .page{display:none}.page.active{display:block}
+
+  /* ── 앱 헤더 ── */
+  .app-header{padding:16px 14px 0;display:flex;align-items:center;justify-content:space-between}
+  .app-logo{font-size:20px;font-weight:800;color:var(--txt);letter-spacing:-.5px}
+  .app-logo span{color:var(--p)}
+  .total-count{font-size:12px;font-weight:600;color:var(--txt2)}
+
+  /* ── 카테고리 탭 ── */
+  .cat-wrap{margin-top:16px}
+  .cat-tabs{display:flex;gap:8px;padding:0 14px;overflow-x:auto;scrollbar-width:none;margin-bottom:12px}
+  .cat-tabs::-webkit-scrollbar{display:none}
+  .cat-tab{flex-shrink:0;padding:7px 16px;border-radius:20px;font-size:13px;font-weight:600;border:1.5px solid var(--border);cursor:pointer;background:var(--card);color:var(--txt2);transition:all .18s ease}
+  .cat-tab.active{background:var(--p);color:#fff;border-color:var(--p)}
+
+  /* ── 영상 카드 ── */
+  .video-list{padding:0 14px}
+  .video-card{background:var(--card);border-radius:18px;margin-bottom:10px;overflow:hidden;box-shadow:0 1px 3px rgba(0,0,0,.06)}
+
+  /* 카드 메인 영역 */
+  .video-main{display:flex;align-items:center;padding:12px 14px 12px 14px;gap:12px}
+  .drag-handle{color:var(--border);font-size:16px;cursor:grab;flex-shrink:0;padding:2px 4px;user-select:none;touch-action:none;line-height:1}
+  .drag-handle:active{cursor:grabbing;color:var(--txt2)}
+  .video-thumb{width:88px;height:58px;border-radius:10px;background:#E5E5EA;flex-shrink:0;overflow:hidden;position:relative}
+  .thumb-clickable{cursor:pointer}
+  .thumb-clickable::after{content:'▶';position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-size:20px;color:#fff;background:rgba(0,0,0,.32);opacity:0;transition:opacity .15s;border-radius:10px;pointer-events:none}
+  .thumb-clickable:active::after{opacity:1}
+  .video-thumb img{width:100%;height:100%;object-fit:cover;display:block}
+  .thumb-ph{width:100%;height:100%;display:flex;align-items:center;justify-content:center;background:linear-gradient(135deg,#E5E5EA,#D1D1D6);font-size:24px}
+  .video-info{flex:1;min-width:0}
+  .video-title{font-size:14px;font-weight:600;color:var(--txt);letter-spacing:-.1px;line-height:1.4;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical}
+  .video-meta{font-size:11px;font-weight:500;color:var(--txt2);margin-top:3px}
+
+  /* 카드 우측 버튼 */
+  .video-right{display:flex;flex-direction:column;align-items:flex-end;gap:5px;flex-shrink:0}
+
+  .card-row2{display:flex;align-items:center;justify-content:flex-end;gap:6px}
+
+  /* 메모 인라인 토글 — 작고 서브 */
+  .memo-chip{background:none;border:none;padding:0 2px;font-size:11px;font-weight:600;color:var(--txt2);cursor:pointer;display:flex;align-items:center;gap:3px;white-space:nowrap;transition:color .15s}
+  .memo-chip.has-memo{color:var(--p)}
+  .memo-chip:active{opacity:.6}
+
+  /* ··· 버튼 */
+  .more-btn{background:none;border:1.5px solid var(--border);border-radius:8px;width:30px;height:28px;font-size:13px;color:var(--txt2);cursor:pointer;display:flex;align-items:center;justify-content:center;font-weight:700;letter-spacing:1px;transition:all .15s}
+  .more-btn:active{background:var(--border)}
+
+  /* ── 메모 패널 ── */
+  .memo-panel{overflow:hidden;max-height:0;transition:max-height .3s cubic-bezier(.4,0,.2,1)}
+  .memo-panel.open{max-height:300px}
+  .memo-inner{padding:0 14px 14px;border-top:1px solid var(--border);padding-top:12px}
+  .memo-label{font-size:10px;font-weight:700;color:var(--txt2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+  .memo-textarea{width:100%;min-height:78px;border:1.5px solid var(--border);border-radius:10px;padding:10px 12px;font-size:13px;font-family:inherit;color:var(--txt);resize:none;background:var(--bg);outline:none;line-height:1.5;transition:border-color .15s}
+  .memo-textarea:focus{border-color:var(--p)}
+  .memo-textarea::placeholder{color:var(--txt2)}
+  .memo-save-row{display:flex;justify-content:flex-end;margin-top:8px}
+  .memo-save-btn{background:var(--dark);color:#fff;border:none;border-radius:10px;padding:7px 16px;font-size:12px;font-weight:700;cursor:pointer}
+
+  /* ── + 추가 버튼 ── */
+  .add-video-btn{display:flex;align-items:center;justify-content:center;gap:8px;width:100%;padding:14px;border:2px dashed var(--border);border-radius:18px;background:none;color:var(--txt2);font-size:14px;font-weight:600;cursor:pointer;margin-bottom:20px;transition:all .15s}
+  .add-video-btn:active{background:var(--pl);border-color:var(--p);color:var(--p)}
+
+  /* ── 오버레이 & 모달 ── */
+  .overlay{display:none;position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:100;align-items:flex-end;justify-content:center}
+  .overlay.open{display:flex}
+  .modal{background:var(--card);border-radius:24px 24px 0 0;padding:24px 20px calc(24px + var(--safe-b));width:100%;max-width:480px;animation:slideUp .28s cubic-bezier(.34,1.56,.64,1) both}
+  @keyframes slideUp{from{transform:translateY(100%)}to{transform:translateY(0)}}
+  .modal-title{font-size:17px;font-weight:700;margin-bottom:20px;letter-spacing:-.2px}
+  .modal-subtitle{font-size:12px;color:var(--txt2);font-weight:500;margin-top:-14px;margin-bottom:16px}
+  .form-row{margin-bottom:14px}
+  .form-label{font-size:11px;font-weight:700;color:var(--txt2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:6px;display:block}
+  .form-input,.form-select{width:100%;padding:11px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--txt);outline:none;transition:border-color .15s;appearance:none;-webkit-appearance:none}
+  .form-input:focus,.form-select:focus{border-color:var(--p)}
+  .modal-btns{display:flex;gap:10px;margin-top:18px}
+  .btn-cancel{flex:1;padding:13px;border:1.5px solid var(--border);border-radius:14px;background:none;font-size:14px;font-weight:600;color:var(--txt2);cursor:pointer}
+  .btn-save{flex:2;padding:13px;border:none;border-radius:14px;background:var(--dark);font-size:14px;font-weight:700;color:#fff;cursor:pointer;transition:opacity .15s}
+  .btn-save:active{opacity:.8}
+
+  /* ── 액션시트 ── */
+  .action-sheet{background:var(--card);border-radius:24px 24px 0 0;padding:16px 16px calc(16px + var(--safe-b));width:100%;max-width:480px;animation:slideUp .25s cubic-bezier(.34,1.56,.64,1) both}
+  .action-sheet-title{font-size:12px;font-weight:600;color:var(--txt2);text-align:center;margin-bottom:14px;padding:0 4px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .action-btn{display:block;width:100%;padding:15px 16px;border:none;background:var(--bg);border-radius:14px;font-size:15px;font-weight:600;color:var(--txt);cursor:pointer;text-align:left;margin-bottom:8px;transition:background .1s}
+  .action-btn:active{background:var(--border)}
+  .action-btn.danger{color:var(--red)}
+  .action-btn.cancel-btn{color:var(--txt2);font-weight:500}
+
+  /* ── 드래그 정렬 (영상 & 카테고리) ── */
+  .sortable-ghost{opacity:.35;background:var(--pl) !important}
+  .sortable-chosen{box-shadow:0 4px 20px rgba(0,0,0,.14) !important;transform:scale(1.01)}
+
+  /* ── 카테고리 정렬 모달 ── */
+  .cat-sort-item{background:var(--bg);border-radius:14px;padding:13px 14px;margin-bottom:8px;display:flex;align-items:center;gap:12px;cursor:grab;user-select:none;touch-action:none}
+  .cat-sort-item:active{cursor:grabbing}
+  .cat-sort-icon{font-size:18px;flex-shrink:0}
+  .cat-sort-name{font-size:14px;font-weight:600;flex:1}
+  .cat-sort-handle{color:var(--border);font-size:18px;flex-shrink:0}
+
+  /* ── 설정 탭 ── */
+  .sec-title{font-size:22px;font-weight:700;letter-spacing:-.4px;margin:18px 14px 10px}
+  .settings-section{padding:0 14px;margin-bottom:24px}
+  .settings-section-title{font-size:11px;font-weight:700;color:var(--txt2);letter-spacing:.08em;text-transform:uppercase;margin-bottom:8px}
+  .settings-card{background:var(--card);border-radius:18px;overflow:hidden}
+  .settings-row{display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid var(--border);cursor:pointer}
+  .settings-row:last-child{border-bottom:none}
+  .settings-row-label{font-size:14px;font-weight:500;color:var(--txt)}
+  .settings-row-val{font-size:14px;color:var(--txt2)}
+  .settings-row-arrow{font-size:13px;color:var(--txt2)}
+  .danger-row .settings-row-label{color:var(--red)}
+
+  /* 설정 영상 관리 */
+  .manage-item{background:var(--bg);border-radius:14px;padding:10px 12px;margin-bottom:8px;display:flex;align-items:center;gap:10px;cursor:grab;touch-action:none}
+  .manage-item:active{cursor:grabbing}
+  .manage-drag{color:var(--border);font-size:16px;flex-shrink:0}
+  .manage-info{flex:1;min-width:0}
+  .manage-name{font-size:13px;font-weight:600;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .manage-cat{font-size:11px;color:var(--txt2);margin-top:2px}
+  .manage-btns{display:flex;gap:6px;flex-shrink:0}
+  .manage-edit-btn{background:var(--pl);color:var(--p);border:none;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer}
+  .manage-delete-btn{background:#FFF0EF;color:var(--red);border:none;border-radius:8px;padding:5px 10px;font-size:12px;font-weight:700;cursor:pointer}
+
+  /* ── 탭바 ── */
+  .tabbar{position:fixed;bottom:0;left:50%;transform:translateX(-50%);width:100%;max-width:480px;background:rgba(255,255,255,.92);backdrop-filter:blur(20px);-webkit-backdrop-filter:blur(20px);border-top:1px solid var(--border);display:flex;height:calc(56px + var(--safe-b));padding-bottom:var(--safe-b);z-index:50}
+  .tab-item{flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;cursor:pointer;border:none;background:none;padding:8px 0;transition:opacity .15s}
+  .tab-item:active{opacity:.6}
+  .tab-icon{font-size:22px;transition:transform .2s cubic-bezier(.34,1.56,.64,1)}
+  .tab-label{font-size:10px;font-weight:600;color:var(--txt2);letter-spacing:.02em}
+  .tab-item.active .tab-icon{transform:scale(1.1)}
+  .tab-item.active .tab-label{color:var(--p);font-weight:700}
+
+  /* ── 토스트 ── */
+  .toast{position:fixed;bottom:calc(80px + var(--safe-b));left:50%;transform:translateX(-50%) translateY(20px);background:var(--dark);color:#fff;padding:10px 20px;border-radius:20px;font-size:13px;font-weight:600;opacity:0;transition:all .3s ease;z-index:300;white-space:nowrap;pointer-events:none}
+  .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+  /* ── 빈 상태 ── */
+  .empty-state{text-align:center;padding:40px 20px;color:var(--txt2)}
+  .empty-state .empty-icon{font-size:48px;margin-bottom:12px}
+  .empty-state p{font-size:14px;font-weight:500}
+
+  /* ── 카테고리 편집 버튼 (탭 우측) ── */
+  .cat-edit-btn{flex-shrink:0;padding:7px 14px;border-radius:20px;font-size:12px;font-weight:700;border:1.5px dashed var(--border);cursor:pointer;background:none;color:var(--txt2);transition:all .18s ease;white-space:nowrap}
+  .cat-edit-btn:active{background:var(--pl);border-color:var(--p);color:var(--p)}
+
+  /* ── 카테고리 편집 모달 ── */
+  .cat-edit-item{background:var(--bg);border-radius:14px;padding:12px 14px;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+  .cat-edit-icon{font-size:20px;flex-shrink:0;cursor:pointer}
+  .cat-edit-name-input{flex:1;border:none;background:transparent;font-size:14px;font-weight:600;color:var(--txt);font-family:inherit;outline:none;min-width:0}
+  .cat-edit-drag{color:var(--border);font-size:16px;flex-shrink:0;cursor:grab;touch-action:none}
+  .cat-edit-delete{background:none;border:none;color:var(--red);font-size:18px;cursor:pointer;flex-shrink:0;padding:2px 4px;line-height:1}
+  .cat-add-row{display:flex;gap:8px;margin-top:4px}
+  .cat-add-icon-input{width:48px;border:1.5px solid var(--border);border-radius:10px;padding:9px 6px;font-size:18px;text-align:center;background:var(--bg);outline:none}
+  .cat-add-name-input{flex:1;border:1.5px solid var(--border);border-radius:10px;padding:9px 12px;font-size:14px;font-family:inherit;background:var(--bg);color:var(--txt);outline:none}
+  .cat-add-name-input:focus,.cat-add-icon-input:focus{border-color:var(--p)}
+  .btn-add-cat{padding:9px 16px;border:none;border-radius:10px;background:var(--p);color:#fff;font-size:13px;font-weight:700;cursor:pointer;flex-shrink:0}
+</style>
+</head>
+<body>
+
+<div class="toast" id="toast"></div>
+
+<!-- ══════════════ PAGE: 레슨 ══════════════ -->
+<div class="page active" id="page-lesson">
+  <div class="app-header">
+    <div class="app-logo">민턴<span>온리</span></div>
+    <div class="total-count" id="total-count"></div>
+  </div>
+
+  <div class="quote-card" onclick="nextQuote()">
+    <div class="quote-text" id="quote-text"></div>
+    <div class="quote-author" id="quote-author"></div>
+  </div>
+
+  <div class="cat-wrap">
+    <div class="cat-tabs" id="cat-tabs"></div>
+  </div>
+
+  <div class="video-list" id="video-list"></div>
+
+  <div style="padding:0 14px">
+    <button class="add-video-btn" onclick="openAddModal(null)">
+      <span style="font-size:18px">＋</span> 레슨 영상 추가
+    </button>
+  </div>
+</div>
+
+<!-- ══════════════ PAGE: 설정 ══════════════ -->
+<div class="page" id="page-settings">
+  <div class="sec-title">설정</div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">편집</div>
+    <div class="settings-card">
+      <div class="settings-row" onclick="openManageModal()">
+        <span class="settings-row-label">영상 순서 · 수정 · 삭제</span>
+        <span class="settings-row-arrow">›</span>
+      </div>
+      <div class="settings-row" onclick="openCatEditModal()">
+        <span class="settings-row-label">카테고리 추가 · 편집 · 순서</span>
+        <span class="settings-row-arrow">›</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">구글 시트 가져오기</div>
+    <!-- 안내 카드 -->
+    <div style="background:var(--pl);border-radius:14px;padding:13px 16px;margin-bottom:10px;display:flex;gap:10px;align-items:flex-start">
+      <div style="font-size:20px;flex-shrink:0">📊</div>
+      <div>
+        <div style="font-size:13px;font-weight:700;color:var(--p);margin-bottom:4px">구글 시트로 영상 한번에 올리기</div>
+        <div style="font-size:11px;color:var(--txt2);line-height:1.6">
+          ① 양식 파일을 구글 드라이브에 업로드<br>
+          ② 영상 정보 입력 후 Apps Script 실행<br>
+          ③ 생성된 JSON을 아래 붙여넣기 → 가져오기
+        </div>
+      </div>
+    </div>
+    <div class="settings-card">
+      <div class="settings-row" onclick="openImportModal()">
+        <span class="settings-row-label">📋 시트 JSON 가져오기</span>
+        <span class="settings-row-arrow">›</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">앱 정보</div>
+    <div class="settings-card">
+      <div class="settings-row">
+        <span class="settings-row-label">앱 이름</span>
+        <span class="settings-row-val">민턴온리</span>
+      </div>
+      <div class="settings-row">
+        <span class="settings-row-label">버전</span>
+        <span class="settings-row-val">v1.4</span>
+      </div>
+      <div class="settings-row">
+        <span class="settings-row-label">저장 방식</span>
+        <span class="settings-row-val">기기 내 저장</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="settings-section">
+    <div class="settings-section-title">데이터</div>
+    <div class="settings-card">
+      <div class="settings-row danger-row" onclick="confirmReset()">
+        <span class="settings-row-label">전체 데이터 삭제</span>
+        <span class="settings-row-arrow">›</span>
+      </div>
+    </div>
+  </div>
+
+  <div style="text-align:center;padding:10px 0 20px;color:var(--txt2);font-size:11px">
+    앱 100개 챌린지 #4 · 민턴온리 v1.4
+  </div>
+</div>
+
+<!-- ══════════════ 탭바 ══════════════ -->
+<div class="tabbar">
+  <button class="tab-item active" id="tab-lesson" onclick="goPage('lesson',this)">
+    <div class="tab-icon">🏸</div>
+    <div class="tab-label">레슨</div>
+  </button>
+  <button class="tab-item" id="tab-settings" onclick="goPage('settings',this)">
+    <div class="tab-icon">⚙️</div>
+    <div class="tab-label">설정</div>
+  </button>
+</div>
+
+<!-- ══════════════ 영상 추가/수정 모달 ══════════════ -->
+<div class="overlay" id="add-overlay">
+  <div class="modal">
+    <div class="modal-title" id="add-modal-title">레슨 영상 추가</div>
+    <div class="form-row">
+      <label class="form-label">카테고리</label>
+      <select class="form-select" id="f-cat"></select>
+    </div>
+    <div class="form-row">
+      <label class="form-label">영상 제목</label>
+      <input class="form-input" id="f-title" type="text" placeholder="예: 백핸드 스윙 기본기">
+    </div>
+    <div class="form-row">
+      <label class="form-label">채널명 (선택)</label>
+      <input class="form-input" id="f-channel" type="text" placeholder="예: 배드민턴 레전드">
+    </div>
+    <div class="form-row">
+      <label class="form-label">유튜브 링크</label>
+      <input class="form-input" id="f-yt" type="url" placeholder="https://youtu.be/..." inputmode="url">
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeAddModal()">취소</button>
+      <button class="btn-save" onclick="saveVideo()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ 액션시트 (카드 ···) ══════════════ -->
+<div class="overlay" id="action-overlay">
+  <div class="action-sheet">
+    <div class="action-sheet-title" id="action-title"></div>
+    <button class="action-btn" onclick="doEdit()">✏️ 영상 수정</button>
+    <button class="action-btn danger" onclick="doDelete()">🗑️ 영상 삭제</button>
+    <button class="action-btn cancel-btn" onclick="closeAction()">취소</button>
+  </div>
+</div>
+
+<!-- ══════════════ 영상 순서·수정·삭제 모달 ══════════════ -->
+<div class="overlay" id="manage-overlay">
+  <div class="modal">
+    <div class="modal-title">영상 순서 · 수정 · 삭제</div>
+    <div class="modal-subtitle">☰ 핸들을 드래그해서 순서를 바꾸세요</div>
+    <div id="manage-list" style="max-height:420px;overflow-y:auto"></div>
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="btn-save" style="flex:1" onclick="closeManageModal()">닫기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ 카테고리 순서 모달 ══════════════ -->
+<div class="overlay" id="cat-sort-overlay">
+  <div class="modal">
+    <div class="modal-title">카테고리 순서 변경</div>
+    <div class="modal-subtitle">☰ 핸들을 드래그해서 순서를 바꾸세요</div>
+    <div id="cat-sort-list"></div>
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="btn-cancel" onclick="closeCatSortModal()">취소</button>
+      <button class="btn-save" onclick="saveCatOrder()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ 시트 가져오기 모달 ══════════════ -->
+<div class="overlay" id="import-overlay">
+  <div class="modal">
+    <div class="modal-title">📋 시트 JSON 가져오기</div>
+    <div style="display:flex;gap:8px;margin-bottom:16px">
+      <button id="import-mode-add" onclick="setImportMode('add')"
+        style="flex:1;padding:10px;border-radius:12px;border:1.5px solid var(--p);background:var(--p);color:#fff;font-size:13px;font-weight:700;cursor:pointer">
+        ➕ 추가
+      </button>
+      <button id="import-mode-replace" onclick="setImportMode('replace')"
+        style="flex:1;padding:10px;border-radius:12px;border:1.5px solid var(--border);background:var(--bg);color:var(--txt2);font-size:13px;font-weight:600;cursor:pointer">
+        🔄 전체 교체
+      </button>
+    </div>
+    <div id="import-mode-desc" style="font-size:11px;color:var(--txt2);margin:-10px 0 14px;line-height:1.6">
+      ➕ 추가: 기존 영상은 유지하고 새 영상을 추가합니다
+    </div>
+    <div class="form-row">
+      <label class="form-label">JSON 붙여넣기</label>
+      <textarea id="import-json"
+        style="width:100%;height:130px;border:1.5px solid var(--border);border-radius:12px;padding:10px 12px;font-size:12px;font-family:monospace;background:var(--bg);color:var(--txt);outline:none;resize:none;line-height:1.5"
+        placeholder="Apps Script 실행 후 생성된 JSON을 여기에 붙여넣으세요"></textarea>
+    </div>
+    <div id="import-preview" style="display:none;background:var(--bg);border-radius:12px;padding:12px;margin-bottom:4px">
+      <div style="font-size:11px;font-weight:700;color:var(--txt2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">미리보기</div>
+      <div id="import-preview-body" style="font-size:12px;color:var(--txt);line-height:1.8;max-height:120px;overflow-y:auto"></div>
+    </div>
+    <div class="modal-btns">
+      <button class="btn-cancel" onclick="closeImportModal()">취소</button>
+      <button class="btn-save" onclick="previewImport()" id="import-preview-btn">미리보기</button>
+      <button class="btn-save" onclick="doImport()" id="import-do-btn" style="display:none;background:var(--g)">가져오기</button>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ 카테고리 편집 모달 ══════════════ -->
+<div class="overlay" id="cat-edit-overlay">
+  <div class="modal">
+    <div class="modal-title">카테고리 편집</div>
+    <div class="modal-subtitle">☰ 드래그로 순서 변경 · 이름/아이콘 직접 편집 가능</div>
+    <div id="cat-edit-list" style="max-height:320px;overflow-y:auto;margin-bottom:12px"></div>
+    <!-- 새 카테고리 추가 -->
+    <div style="font-size:11px;font-weight:700;color:var(--txt2);letter-spacing:.06em;text-transform:uppercase;margin-bottom:8px">새 카테고리 추가</div>
+    <div class="cat-add-row">
+      <input class="cat-add-icon-input" id="new-cat-icon" type="text" placeholder="🏸" maxlength="2">
+      <input class="cat-add-name-input" id="new-cat-name" type="text" placeholder="카테고리 이름">
+      <button class="btn-add-cat" onclick="addCatFromModal()">추가</button>
+    </div>
+    <div class="modal-btns" style="margin-top:14px">
+      <button class="btn-cancel" onclick="closeCatEditModal()">취소</button>
+      <button class="btn-save" onclick="saveCatEdit()">저장</button>
+    </div>
+  </div>
+</div>
+
+<!-- Sortable.js CDN -->
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Sortable/1.15.2/Sortable.min.js"></script>
+<script>
+// ══════════════════════════════
+// 격언
+// ══════════════════════════════
+const QUOTES=[
+  {text:"연습은 완벽을 만들지 않는다. 완벽한 연습이 완벽을 만든다.",author:"Vince Lombardi"},
+  {text:"챔피언은 특별한 재능이 있는 게 아니다. 평범한 사람이 특별한 열정을 가졌을 뿐이다.",author:"Roger Bannister"},
+  {text:"느리게 가는 것을 두려워하지 마라. 멈추는 것을 두려워하라.",author:"중국 격언"},
+  {text:"배움의 끝은 없다. 오늘 배운 것이 내일의 기초가 된다.",author:"미상"},
+  {text:"천 번의 상상보다 한 번의 실천이 낫다.",author:"한국 속담"},
+  {text:"자신의 한계를 알아야 그 너머로 갈 수 있다.",author:"Bruce Lee"},
+  {text:"실력은 훈련으로 만들어지고, 자신감은 실력에서 나온다.",author:"미상"},
+  {text:"매일 조금씩 더 나은 선수가 되어라. 그것이 최선이다.",author:"미상"},
+  {text:"몸이 기억할 때까지 반복하라. 그것이 기술이 되는 순간이다.",author:"미상"},
+  {text:"스포츠에서 실패란 없다. 배움이 있을 뿐이다.",author:"미상"},
+  {text:"준비되지 않은 성공은 없다. 보이지 않는 곳에서의 훈련이 승리를 만든다.",author:"미상"},
+  {text:"내가 힘들면 상대도 힘들다. 포기하지 마라.",author:"배드민턴 격언"},
+  {text:"셔틀이 있는 곳에 발이 먼저 가야 한다.",author:"배드민턴 격언"},
+  {text:"폼이 흔들리면 결과도 흔들린다.",author:"코칭 철학"},
+  {text:"한 가지 기술을 완성하려면 만 번은 쳐봐야 한다.",author:"무도 철학"},
+];
+let quoteIdx=0;
+function nextQuote(){
+  quoteIdx=(quoteIdx+1)%QUOTES.length;
+  document.getElementById('quote-text').textContent=QUOTES[quoteIdx].text;
+  document.getElementById('quote-author').textContent='— '+QUOTES[quoteIdx].author;
+}
+function initQuote(){
+  quoteIdx=Math.floor(Math.random()*QUOTES.length);
+  document.getElementById('quote-text').textContent=QUOTES[quoteIdx].text;
+  document.getElementById('quote-author').textContent='— '+QUOTES[quoteIdx].author;
+}
+
+// ══════════════════════════════
+// DB
+// ══════════════════════════════
+const DB_KEY='minton_only_v1';
+let DB={videos:[],cats:[
+  {id:'c1',name:'스텝',icon:'🦶'},
+  {id:'c2',name:'스윙',icon:'🏸'},
+  {id:'c3',name:'로테이션',icon:'🔄'},
+  {id:'c4',name:'서브',icon:'🎯'},
+  {id:'c5',name:'수비',icon:'🛡️'},
+  {id:'c6',name:'리시브',icon:'🏓'},
+],currentCat:'전체'};
+
+function loadDB(){
+  try{
+    const s=localStorage.getItem(DB_KEY);
+    if(s){
+      const parsed=JSON.parse(s);
+      DB=parsed;
+    }
+    if(!DB.videos) DB.videos=[];
+    if(!DB.cats||!DB.cats.length) DB.cats=[
+      {id:'c1',name:'스텝',icon:'🦶'},{id:'c2',name:'스윙',icon:'🏸'},
+      {id:'c3',name:'로테이션',icon:'🔄'},{id:'c4',name:'서브',icon:'🎯'},
+      {id:'c5',name:'수비',icon:'🛡️'},{id:'c6',name:'리시브',icon:'🏓'}
+    ];
+    if(!DB.currentCat) DB.currentCat='전체';
+  }catch(e){DB={videos:[],cats:[
+    {id:'c1',name:'스텝',icon:'🦶'},{id:'c2',name:'스윙',icon:'🏸'},
+    {id:'c3',name:'로테이션',icon:'🔄'},{id:'c4',name:'서브',icon:'🎯'},
+    {id:'c5',name:'수비',icon:'🛡️'},{id:'c6',name:'리시브',icon:'🏓'}
+  ],currentCat:'전체'};}
+}
+function saveDB(){
+  try{localStorage.setItem(DB_KEY,JSON.stringify(DB));}catch(e){}
+}
+
+// ══════════════════════════════
+// 유틸
+// ══════════════════════════════
+function esc(s){return String(s||'').replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;')}
+function parseYtId(url){
+  if(!url)return null;
+  url=url.trim();
+  let m=url.match(/youtu\.be\/([a-zA-Z0-9_-]{11})/);
+  if(m)return m[1];
+  m=url.match(/[?&]v=([a-zA-Z0-9_-]{11})/);
+  if(m)return m[1];
+  if(/^[a-zA-Z0-9_-]{11}$/.test(url))return url;
+  return null;
+}
+function openYt(ytId){
+  if(!ytId)return;
+  const t=Date.now();
+  window.location.href='youtube://www.youtube.com/watch?v='+ytId;
+  setTimeout(()=>{if(Date.now()-t<400)window.open('https://www.youtube.com/watch?v='+ytId,'_blank')},300);
+}
+
+// ══════════════════════════════
+// 카테고리 탭 렌더
+// ══════════════════════════════
+function renderCatTabs(){
+  const el=document.getElementById('cat-tabs');
+  const allActive=DB.currentCat==='전체';
+  let html=`<button class="cat-tab${allActive?' active':''}" onclick="setZone('전체')">🎬 전체</button>`;
+  html+=DB.cats.map(c=>`
+    <button class="cat-tab${DB.currentCat===c.name?' active':''}" onclick="setZone('${c.name}')">${c.icon} ${c.name}</button>
+  `).join('');
+  html+=`<button class="cat-edit-btn" onclick="openCatEditModal()" title="카테고리 편집">＋ 편집</button>`;
+  el.innerHTML=html;
+}
+
+function setZone(name){
+  DB.currentCat=name;
+  renderCatTabs();
+  renderVideos();
+}
+
+// ══════════════════════════════
+// 영상 렌더
+// ══════════════════════════════
+let videoSortable=null;
+
+function renderVideos(){
+  const zone=DB.currentCat;
+  const isAll=(zone==='전체');
+  const list=isAll?DB.videos:DB.videos.filter(v=>v.cat===zone);
+  const el=document.getElementById('video-list');
+  document.getElementById('total-count').textContent=`총 ${DB.videos.length}개 영상`;
+
+  if(list.length===0){
+    const cat=DB.cats.find(c=>c.name===zone);
+    el.innerHTML=`<div class="empty-state"><div class="empty-icon">${cat?cat.icon:'🏸'}</div><p>${zone} 레슨 영상을 추가해보세요</p></div>`;
+    if(videoSortable){videoSortable.destroy();videoSortable=null;}
+    return;
+  }
+
+  el.innerHTML=list.map(v=>{
+    const thumbUrl=v.ytId?`https://img.youtube.com/vi/${v.ytId}/mqdefault.jpg`:null;
+    const hasMemo=v.memo&&v.memo.trim().length>0;
+    const catIcon=(DB.cats.find(cc=>cc.name===v.cat)||{icon:'🏸'}).icon;
+    const thumbCls='video-thumb'+(v.ytId?' thumb-clickable':'');
+    const thumbAttr=v.ytId?`data-ytid="${v.ytId}"`:'';
+    const thumbInner=thumbUrl
+      ?`<img src="${thumbUrl}" alt="" onerror="this.parentNode.innerHTML='<div class=thumb-ph>${catIcon}</div>'">`
+      :`<div class="thumb-ph">${catIcon}</div>`;
+    return `
+    <div class="video-card" data-id="${v.id}">
+      <div class="video-main">
+        <div class="drag-handle" style="${isAll?'opacity:0.2;pointer-events:none':''}">⠿</div>
+        <div class="${thumbCls}" ${thumbAttr}>${thumbInner}</div>
+        <div class="video-info">
+          <div class="video-title">${esc(v.title)}</div>
+          <div class="video-meta">${isAll?`<span style="background:var(--pl);color:var(--p);border-radius:5px;padding:1px 6px;font-size:10px;font-weight:700;margin-right:4px">${v.cat}</span>`:''} ${esc(v.channel||'채널 미입력')}</div>
+        </div>
+        <div class="video-right">
+          <div class="card-row2">
+            <button class="memo-chip${hasMemo?' has-memo':''}" id="mchip-${v.id}" onclick="toggleMemo('${v.id}')">
+              📝<span id="mchip-txt-${v.id}">${hasMemo?'메모 있음':'메모'}</span>
+            </button>
+            <button class="more-btn" onclick="openAction('${v.id}')">···</button>
+          </div>
+        </div>
+      </div>
+      <div class="memo-panel" id="mp-${v.id}">
+        <div class="memo-inner">
+          <div class="memo-label">주요 내용 · 내 생각 메모</div>
+          <textarea class="memo-textarea" id="mt-${v.id}" placeholder="핵심 포인트, 느낀 점, 다음에 집중할 부분을 자유롭게 적어보세요">${esc(v.memo||'')}</textarea>
+          <div class="memo-save-row"><button class="memo-save-btn" onclick="saveMemo('${v.id}')">저장</button></div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+
+  // 썸네일 클릭 → 유튜브 (이벤트 위임, 한 번만 등록)
+  if(!el._thumbBound){
+    el.addEventListener('click',function(e){
+      const thumb=e.target.closest('.thumb-clickable');
+      if(thumb){openYt(thumb.dataset.ytid);}
+    });
+    el._thumbBound=true;
+  }
+
+  // 카드 드래그 정렬 (전체보기 시 비활성)
+  if(videoSortable){videoSortable.destroy();videoSortable=null;}
+  if(isAll){return;}
+  videoSortable=new Sortable(el,{
+    animation:180,
+    handle:'.drag-handle',
+    ghostClass:'sortable-ghost',
+    chosenClass:'sortable-chosen',
+    onEnd(evt){
+      // DB.videos에서 현재 카테고리 영상 순서 반영
+      const ids=[...el.querySelectorAll('.video-card')].map(c=>c.dataset.id);
+      // 현재 카테고리 외 영상은 유지, 현재 카테고리만 순서 교체
+      const others=DB.videos.filter(v=>v.cat!==zone);
+      const reordered=ids.map(id=>DB.videos.find(v=>v.id===id)).filter(Boolean);
+      // 원래 순서에서 현재 카테고리의 첫 인덱스 찾기
+      const firstIdx=DB.videos.findIndex(v=>v.cat===zone);
+      if(firstIdx===-1){DB.videos=[...others,...reordered];}
+      else{
+        // 전체 배열에서 해당 카테고리 슬롯들을 새 순서로 교체
+        let ri=0;
+        DB.videos=DB.videos.map(v=>v.cat===zone?reordered[ri++]:v);
+      }
+      saveDB();
+      showToast('순서가 저장됐습니다');
+    }
+  });
+}
+
+// ══════════════════════════════
+// 메모
+// ══════════════════════════════
+function toggleMemo(id){
+  document.getElementById('mp-'+id)?.classList.toggle('open');
+}
+function saveMemo(id){
+  const ta=document.getElementById('mt-'+id);
+  if(!ta)return;
+  const v=DB.videos.find(x=>x.id===id);
+  if(!v)return;
+  v.memo=ta.value;
+  saveDB();
+  const chip=document.getElementById('mchip-'+id);
+  const txt=document.getElementById('mchip-txt-'+id);
+  const has=v.memo.trim().length>0;
+  if(chip)chip.classList.toggle('has-memo',has);
+  if(txt)txt.textContent=has?'메모 있음':'메모';
+  showToast('메모 저장 완료 ✓');
+}
+
+// ══════════════════════════════
+// 액션시트
+// ══════════════════════════════
+let _actionId=null;
+function openAction(id){
+  _actionId=id;
+  const v=DB.videos.find(x=>x.id===id);
+  document.getElementById('action-title').textContent=v?v.title:'';
+  document.getElementById('action-overlay').classList.add('open');
+}
+function closeAction(){document.getElementById('action-overlay').classList.remove('open');_actionId=null;}
+function doEdit(){const id=_actionId;closeAction();openAddModal(id);}
+function doDelete(){const id=_actionId;closeAction();deleteVideoById(id);}
+
+// ══════════════════════════════
+// 영상 추가 / 수정 모달
+// ══════════════════════════════
+let _editId=null;
+function buildCatSelect(){
+  const sel=document.getElementById('f-cat');
+  sel.innerHTML=DB.cats.map(c=>`<option value="${c.name}">${c.icon} ${c.name}</option>`).join('');
+}
+function openAddModal(editId){
+  _editId=editId;
+  buildCatSelect();
+  if(editId){
+    const v=DB.videos.find(x=>x.id===editId);
+    if(!v)return;
+    document.getElementById('add-modal-title').textContent='영상 수정';
+    document.getElementById('f-cat').value=v.cat;
+    document.getElementById('f-title').value=v.title;
+    document.getElementById('f-channel').value=v.channel||'';
+    document.getElementById('f-yt').value=v.ytId?'https://youtu.be/'+v.ytId:'';
+  }else{
+    document.getElementById('add-modal-title').textContent='레슨 영상 추가';
+    document.getElementById('f-cat').value=DB.currentCat;
+    document.getElementById('f-title').value='';
+    document.getElementById('f-channel').value='';
+    document.getElementById('f-yt').value='';
+  }
+  document.getElementById('add-overlay').classList.add('open');
+}
+function closeAddModal(){document.getElementById('add-overlay').classList.remove('open');_editId=null;}
+function saveVideo(){
+  const cat=document.getElementById('f-cat').value;
+  const title=document.getElementById('f-title').value.trim();
+  const channel=document.getElementById('f-channel').value.trim();
+  const ytRaw=document.getElementById('f-yt').value.trim();
+  if(!title){showToast('영상 제목을 입력해주세요');return;}
+  const ytId=ytRaw?parseYtId(ytRaw):null;
+  if(ytRaw&&!ytId){showToast('유튜브 링크를 확인해주세요');return;}
+  if(_editId){
+    const v=DB.videos.find(x=>x.id===_editId);
+    if(v){v.cat=cat;v.title=title;v.channel=channel;v.ytId=ytId;}
+    saveDB();closeAddModal();
+    DB.currentCat=cat;renderCatTabs();renderVideos();
+    if(document.getElementById('manage-overlay').classList.contains('open'))renderManageList();
+    showToast('영상이 수정되었습니다 ✓');
+  }else{
+    DB.videos.push({id:'v'+Date.now(),cat,title,channel,ytId,memo:''});
+    saveDB();closeAddModal();
+    DB.currentCat=cat;renderCatTabs();renderVideos();
+    showToast('영상 추가 완료 🏸');
+  }
+}
+
+// ══════════════════════════════
+// 영상 삭제
+// ══════════════════════════════
+function deleteVideoById(id){
+  if(!id)return;
+  const v=DB.videos.find(x=>x.id===id);
+  if(!v)return;
+  if(!confirm(`"${v.title}"\n이 영상을 삭제할까요?`))return;
+  DB.videos=DB.videos.filter(x=>x.id!==id);
+  saveDB();renderVideos();
+  if(document.getElementById('manage-overlay').classList.contains('open'))renderManageList();
+  showToast('삭제되었습니다');
+}
+
+// ══════════════════════════════
+// 영상 관리 모달 (순서 + 수정 + 삭제)
+// ══════════════════════════════
+let manageSortables=[];
+function openManageModal(){renderManageList();document.getElementById('manage-overlay').classList.add('open');}
+function closeManageModal(){
+  manageSortables.forEach(s=>s.destroy());manageSortables=[];
+  document.getElementById('manage-overlay').classList.remove('open');
+  renderVideos();
+}
+function renderManageList(){
+  manageSortables.forEach(s=>s.destroy());manageSortables=[];
+  const el=document.getElementById('manage-list');
+  if(DB.videos.length===0){
+    el.innerHTML='<p style="text-align:center;color:var(--txt2);font-size:13px;padding:20px 0">저장된 영상이 없습니다</p>';
+    return;
+  }
+  let html='';
+  DB.cats.forEach(cat=>{
+    const group=DB.videos.filter(v=>v.cat===cat.name);
+    if(!group.length)return;
+    html+=`<div style="font-size:11px;font-weight:700;color:var(--txt2);letter-spacing:.06em;text-transform:uppercase;margin:14px 0 6px">${cat.icon} ${cat.name}</div>`;
+    html+=`<div class="manage-group" data-cat="${cat.name}">`;
+    group.forEach(v=>{
+      html+=`
+      <div class="manage-item" data-id="${v.id}">
+        <div class="manage-drag">⠿</div>
+        <div class="manage-info">
+          <div class="manage-name">${esc(v.title)}</div>
+          <div class="manage-cat">${esc(v.channel||'채널 미입력')}</div>
+        </div>
+        <div class="manage-btns">
+          <button class="manage-edit-btn" onclick="manageEdit('${v.id}')">수정</button>
+          <button class="manage-delete-btn" onclick="manageDelete('${v.id}')">삭제</button>
+        </div>
+      </div>`;
+    });
+    html+=`</div>`;
+  });
+  el.innerHTML=html;
+
+  // 각 카테고리 그룹에 Sortable 적용
+  el.querySelectorAll('.manage-group').forEach(group=>{
+    const catName=group.dataset.cat;
+    const s=new Sortable(group,{
+      animation:160,
+      handle:'.manage-drag',
+      ghostClass:'sortable-ghost',
+      chosenClass:'sortable-chosen',
+      onEnd(){
+        const ids=[...group.querySelectorAll('.manage-item')].map(i=>i.dataset.id);
+        let ri=0;
+        DB.videos=DB.videos.map(v=>v.cat===catName?DB.videos.find(x=>x.id===ids[ri++])||v:v);
+        // 안전하게 재정렬
+        const others=DB.videos.filter(v=>v.cat!==catName);
+        const reordered=ids.map(id=>DB.videos.find(v=>v.id===id)).filter(Boolean);
+        // 원래 위치 유지하며 해당 카테고리만 교체
+        let idx=0;
+        DB.videos=DB.videos.map(v=>v.cat===catName?reordered[idx++]:v);
+        saveDB();
+        showToast('순서 변경 완료');
+      }
+    });
+    manageSortables.push(s);
+  });
+}
+function manageEdit(id){closeManageModal();openAddModal(id);}
+function manageDelete(id){
+  const v=DB.videos.find(x=>x.id===id);
+  if(!v)return;
+  if(!confirm(`"${v.title}"\n이 영상을 삭제할까요?`))return;
+  DB.videos=DB.videos.filter(x=>x.id!==id);
+  saveDB();renderManageList();renderVideos();showToast('삭제되었습니다');
+}
+
+// ══════════════════════════════
+// 카테고리 순서 변경
+// ══════════════════════════════
+let catSortable=null;
+let _tempCats=[];
+function openCatSortModal(){
+  _tempCats=JSON.parse(JSON.stringify(DB.cats));
+  const el=document.getElementById('cat-sort-list');
+  el.innerHTML=_tempCats.map(c=>`
+    <div class="cat-sort-item" data-id="${c.id}">
+      <div class="cat-sort-icon">${c.icon}</div>
+      <div class="cat-sort-name">${c.name}</div>
+      <div class="cat-sort-handle">⠿</div>
+    </div>`).join('');
+  if(catSortable)catSortable.destroy();
+  catSortable=new Sortable(el,{
+    animation:180,
+    ghostClass:'sortable-ghost',
+    chosenClass:'sortable-chosen',
+  });
+  document.getElementById('cat-sort-overlay').classList.add('open');
+}
+function closeCatSortModal(){
+  document.getElementById('cat-sort-overlay').classList.remove('open');
+  if(catSortable){catSortable.destroy();catSortable=null;}
+}
+function saveCatOrder(){
+  const el=document.getElementById('cat-sort-list');
+  const newOrder=[...el.querySelectorAll('.cat-sort-item')].map(el=>el.dataset.id);
+  DB.cats=newOrder.map(id=>DB.cats.find(c=>c.id===id)).filter(Boolean);
+  // currentCat가 여전히 유효한지 확인
+  if(!DB.cats.find(c=>c.name===DB.currentCat)) DB.currentCat=DB.cats[0].name;
+  saveDB();
+  closeCatSortModal();
+  renderCatTabs();
+  renderVideos();
+  showToast('카테고리 순서가 저장됐습니다 ✓');
+}
+
+// ══════════════════════════════
+// 카테고리 편집 (추가·이름변경·삭제·순서)
+// ══════════════════════════════
+let catEditSortable=null;
+
+function openCatEditModal(){
+  renderCatEditList();
+  document.getElementById('new-cat-icon').value='';
+  document.getElementById('new-cat-name').value='';
+  document.getElementById('cat-edit-overlay').classList.add('open');
+}
+
+function closeCatEditModal(){
+  document.getElementById('cat-edit-overlay').classList.remove('open');
+  if(catEditSortable){catEditSortable.destroy();catEditSortable=null;}
+}
+
+function renderCatEditList(){
+  if(catEditSortable){catEditSortable.destroy();catEditSortable=null;}
+  const el=document.getElementById('cat-edit-list');
+  el.innerHTML=DB.cats.map(cat=>`
+    <div class="cat-edit-item" data-id="${cat.id}">
+      <div class="cat-edit-drag">⠿</div>
+      <input class="cat-add-icon-input cat-edit-icon-inp" data-id="${cat.id}" value="${cat.icon}" maxlength="2" style="width:42px;font-size:17px">
+      <input class="cat-edit-name-input" data-id="${cat.id}" value="${esc(cat.name)}" placeholder="카테고리명">
+      <button class="cat-edit-delete" onclick="deleteCatFromModal('${cat.id}')" title="삭제">×</button>
+    </div>`).join('');
+
+  catEditSortable=new Sortable(el,{
+    animation:160,
+    handle:'.cat-edit-drag',
+    ghostClass:'sortable-ghost',
+    chosenClass:'sortable-chosen',
+  });
+}
+
+function addCatFromModal(){
+  const icon=document.getElementById('new-cat-icon').value.trim()||'📂';
+  const name=document.getElementById('new-cat-name').value.trim();
+  if(!name){showToast('카테고리 이름을 입력하세요');return;}
+  if(DB.cats.find(c=>c.name===name)){showToast('이미 있는 카테고리입니다');return;}
+  DB.cats.push({id:'c'+Date.now(),name,icon});
+  document.getElementById('new-cat-icon').value='';
+  document.getElementById('new-cat-name').value='';
+  renderCatEditList();
+  showToast('추가됐습니다');
+}
+
+function deleteCatFromModal(id){
+  const cat=DB.cats.find(c=>c.id===id);
+  if(!cat)return;
+  const videoCount=DB.videos.filter(v=>v.cat===cat.name).length;
+  const msg=videoCount>0
+    ?`"${cat.name}" 카테고리를 삭제하면\n소속 영상 ${videoCount}개도 삭제됩니다.\n계속할까요?`
+    :`"${cat.name}" 카테고리를 삭제할까요?`;
+  if(!confirm(msg))return;
+  if(videoCount>0) DB.videos=DB.videos.filter(v=>v.cat!==cat.name);
+  DB.cats=DB.cats.filter(c=>c.id!==id);
+  renderCatEditList();
+}
+
+function saveCatEdit(){
+  const el=document.getElementById('cat-edit-list');
+  const newOrder=[...el.querySelectorAll('.cat-edit-item')].map(item=>{
+    const id=item.dataset.id;
+    const icon=item.querySelector('.cat-edit-icon-inp').value.trim()||'📂';
+    const nameInput=item.querySelector('.cat-edit-name-input');
+    const name=nameInput.value.trim();
+    const orig=DB.cats.find(c=>c.id===id);
+    // 이름이 바뀐 경우 영상 cat도 업데이트
+    if(orig&&orig.name!==name){
+      DB.videos.forEach(v=>{if(v.cat===orig.name)v.cat=name;});
+    }
+    return {id,name:name||orig?.name||'카테고리',icon};
+  }).filter(c=>c.name);
+  DB.cats=newOrder;
+  if(!DB.cats.find(c=>c.name===DB.currentCat)) DB.currentCat='전체';
+  saveDB();
+  closeCatEditModal();
+  renderCatTabs();
+  renderVideos();
+  showToast('카테고리 저장 완료 ✓');
+}
+
+// ══════════════════════════════
+// 전체 초기화
+// ══════════════════════════════
+function confirmReset(){
+  if(!confirm('모든 영상과 메모가 삭제됩니다.\n계속할까요?'))return;
+  localStorage.removeItem(DB_KEY);location.reload();
+}
+
+// ══════════════════════════════
+// 페이지 전환
+// ══════════════════════════════
+function goPage(id,el){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.tab-item').forEach(t=>t.classList.remove('active'));
+  document.getElementById('page-'+id).classList.add('active');
+  if(el)el.classList.add('active');
+  if(id==='lesson'){renderCatTabs();renderVideos();}
+}
+
+// ══════════════════════════════
+// 토스트
+// ══════════════════════════════
+function showToast(msg){
+  const t=document.getElementById('toast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),2200);
+}
+
+
+// ══════════════════════════════
+// 시트 가져오기 (Import)
+// ══════════════════════════════
+let _importMode = 'add';  // 'add' | 'replace'
+let _importParsed = null;
+
+function openImportModal() {
+  _importMode = 'add';
+  _importParsed = null;
+  document.getElementById('import-json').value = '';
+  document.getElementById('import-preview').style.display = 'none';
+  document.getElementById('import-preview-btn').style.display = '';
+  document.getElementById('import-do-btn').style.display = 'none';
+  setImportMode('add');
+  document.getElementById('import-overlay').classList.add('open');
+}
+function closeImportModal() {
+  document.getElementById('import-overlay').classList.remove('open');
+  _importParsed = null;
+}
+
+function setImportMode(mode) {
+  _importMode = mode;
+  _importParsed = null;
+  document.getElementById('import-preview').style.display = 'none';
+  document.getElementById('import-preview-btn').style.display = '';
+  document.getElementById('import-do-btn').style.display = 'none';
+
+  const btnAdd     = document.getElementById('import-mode-add');
+  const btnReplace = document.getElementById('import-mode-replace');
+  const desc       = document.getElementById('import-mode-desc');
+
+  if (mode === 'add') {
+    btnAdd.style.background     = 'var(--p)';
+    btnAdd.style.borderColor    = 'var(--p)';
+    btnAdd.style.color          = '#fff';
+    btnReplace.style.background = 'var(--bg)';
+    btnReplace.style.borderColor= 'var(--border)';
+    btnReplace.style.color      = 'var(--txt2)';
+    desc.textContent = '➕ 추가: 기존 영상은 유지하고 새 영상을 추가합니다';
+  } else {
+    btnReplace.style.background  = 'var(--red)';
+    btnReplace.style.borderColor = 'var(--red)';
+    btnReplace.style.color       = '#fff';
+    btnAdd.style.background      = 'var(--bg)';
+    btnAdd.style.borderColor     = 'var(--border)';
+    btnAdd.style.color           = 'var(--txt2)';
+    desc.textContent = '🔄 전체 교체: 기존 영상을 모두 지우고 시트 내용으로 교체합니다';
+  }
+}
+
+function previewImport() {
+  let raw = document.getElementById('import-json').value.trim();
+  if (!raw) { showToast('JSON을 붙여넣어 주세요'); return; }
+
+  // 1순위: 그대로 파싱 시도 (정상 JSON은 여기서 바로 성공)
+  let parsed;
+  try {
+    parsed = JSON.parse(raw);
+  } catch(e) {
+    // 2순위: 구글 시트 셀 복사 시 바깥 따옴표가 붙는 경우 제거 후 재시도
+    // 예: "[{...}]" — 안쪽 ""(빈값)은 건드리지 않고 바깥 따옴표만 제거
+    let cleaned = raw;
+    if ((cleaned.startsWith('"') && cleaned.endsWith('"')) ||
+        (cleaned.startsWith('\u201c') && cleaned.endsWith('\u201d'))) {
+      cleaned = cleaned.slice(1, -1);
+    }
+    // 이스케이프된 따옴표 복원: \" → "
+    cleaned = cleaned.replace(/\\"/g, '"');
+    try {
+      parsed = JSON.parse(cleaned);
+    } catch(e2) {
+      showToast('JSON 오류 — 사이드바 [전체 복사] 버튼을 이용하세요'); return;
+    }
+  }
+  if (!Array.isArray(parsed)) { showToast('배열 형태의 JSON이어야 합니다'); return; }
+
+  // 유효한 항목만 필터
+  const valid = parsed.filter(v => v.cat && v.title);
+  if (!valid.length) { showToast('유효한 영상 데이터가 없습니다'); return; }
+
+  // 카테고리별 집계
+  const catCount = {};
+  valid.forEach(v => { catCount[v.cat] = (catCount[v.cat] || 0) + 1; });
+  const catLines = Object.entries(catCount).map(([c,n]) => `${c} ${n}개`).join(' · ');
+
+  const previewEl = document.getElementById('import-preview');
+  const bodyEl    = document.getElementById('import-preview-body');
+
+  let html = `<div style="font-weight:700;margin-bottom:6px">총 ${valid.length}개 영상 인식됨</div>`;
+  html += `<div style="color:var(--txt2);font-size:11px;margin-bottom:8px">${catLines}</div>`;
+  valid.slice(0, 8).forEach(v => {
+    html += `<div style="display:flex;gap:6px;margin-bottom:3px">
+      <span style="background:var(--pl);color:var(--p);border-radius:6px;padding:1px 7px;font-size:10px;font-weight:700;flex-shrink:0">${v.cat}</span>
+      <span style="overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${v.title}</span>
+    </div>`;
+  });
+  if (valid.length > 8) html += `<div style="color:var(--txt2);font-size:11px;margin-top:4px">…외 ${valid.length - 8}개</div>`;
+
+  bodyEl.innerHTML = html;
+  previewEl.style.display = 'block';
+
+  _importParsed = valid;
+  document.getElementById('import-preview-btn').style.display = 'none';
+  document.getElementById('import-do-btn').style.display = '';
+}
+
+function doImport() {
+  if (!_importParsed || !_importParsed.length) return;
+
+  const now = Date.now();
+  const incoming = _importParsed.map((v, i) => ({
+    id:      'v' + (now + i),
+    cat:     String(v.cat    || '').trim(),
+    title:   String(v.title  || '').trim(),
+    channel: String(v.channel|| '').trim(),
+    ytId:    v.ytId || null,
+    memo:    String(v.memo   || '').trim(),
+  })).filter(v => v.cat && v.title);
+
+  // 새 카테고리가 있으면 DB.cats에 추가
+  const catNames = DB.cats.map(c => c.name);
+  const catIcons = {'스텝':'🦶','스윙':'🏸','로테이션':'🔄','서브':'🎯','수비':'🛡️'};
+  incoming.forEach(v => {
+    if (!catNames.includes(v.cat)) {
+      DB.cats.push({ id: 'c' + Date.now() + Math.random(), name: v.cat, icon: catIcons[v.cat] || '📂' });
+      catNames.push(v.cat);
+    }
+  });
+
+  if (_importMode === 'replace') {
+    DB.videos = incoming;
+    showToast(`${incoming.length}개 영상으로 교체 완료 ✓`);
+  } else {
+    DB.videos = [...DB.videos, ...incoming];
+    showToast(`${incoming.length}개 영상 추가 완료 🏸`);
+  }
+
+  saveDB();
+  closeImportModal();
+  renderCatTabs();
+  renderVideos();
+}
+
+// import 오버레이 바깥 탭 닫기
+document.getElementById('import-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeImportModal();
+});
+document.getElementById('cat-edit-overlay').addEventListener('click', function(e) {
+  if (e.target === this) closeCatEditModal();
+});
+
+// ══════════════════════════════
+// 오버레이 바깥 탭 닫기
+// ══════════════════════════════
+['add-overlay','action-overlay','cat-edit-overlay'].forEach(id=>{
+  document.getElementById(id).addEventListener('click',function(e){
+    if(e.target===this){
+      this.classList.remove('open');
+      if(id==='add-overlay')_editId=null;
+      if(id==='action-overlay')_actionId=null;
+    }
+  });
+});
+
+// ══════════════════════════════
+// init
+// ══════════════════════════════
+function init(){
+  loadDB();
+  initQuote();
+  renderCatTabs();
+  renderVideos();
+}
+init();
+</script>
+</body>
+</html>
